@@ -42,7 +42,6 @@ phases:
     commands:
       - >-
         echo Building Android application;
-        cd android;
         chmod +x gradlew;
         if [ "${BUILD_TYPE}" = "release" ]; then
         ./gradlew assembleRelease --debug --stacktrace;
