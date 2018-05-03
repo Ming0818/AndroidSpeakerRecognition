@@ -87,7 +87,7 @@ phases:
 
 artifacts:
   files:
-    - ${PACKAGE_PATH}/app/build/intermediates/assets/**/*.bundle*
-    - ${PACKAGE_PATH}/app/build/outputs/**/*.apk
-    - ${PACKAGE_PATH}/app/build/outputs/**/*.txt
+    - ${PACKAGE_PATH}app/build/intermediates/assets/**/*.bundle*
+    - ${PACKAGE_PATH}app/build/outputs/**/*.apk
+    - ${PACKAGE_PATH}app/build/outputs/**/*.txt
   discard-paths: yes
