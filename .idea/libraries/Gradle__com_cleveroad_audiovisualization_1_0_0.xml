@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="Gradle: com.cleveroad:audiovisualization-1.0.0">
+    <CLASSES>
+      <root url="file://$USER_HOME$/.android/build-cache/21e91f20a55e03e2c682bf04c3d71b94823105b8/output/res" />
+      <root url="jar://$USER_HOME$/.android/build-cache/21e91f20a55e03e2c682bf04c3d71b94823105b8/output/jars/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.cleveroad/audiovisualization/1.0.0/daf2fb13ea09d1b4d2fe0debcb7e69649b3d0651/audiovisualization-1.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

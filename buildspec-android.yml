@@ -81,9 +81,9 @@ phases:
         find . -type f -name 'store*.jks' -exec rm {} + || true;
       - >-
         echo Exporting artifacts to S3;
-        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}android/app/build/intermediates/assets/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.bundle*' || true;
-        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}android/app/build/outputs/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.apk' || true;
-        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}android/app/build/outputs/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.txt' || true;
+        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}/app/build/intermediates/assets/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.bundle*' || true;
+        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}/app/build/outputs/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.apk' || true;
+        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}/app/build/outputs/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.txt' || true;
 
 artifacts:
   files:
