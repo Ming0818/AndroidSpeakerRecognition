@@ -1,0 +1,94 @@
+# This file determines what is run during your app build in AWS CodeBuild. If you have configured
+# signing for your builds, then this buildspec will also sign your app after building.
+
+# The CodeBuild instance executing this buildspec has permission to decrypt mobile application 
+# signing secrets using the KMS key in your account. Avoid logging or transferring keystore secrets 
+# outside of this instance.
+
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - >-
+        echo Configuring Android build tools path;
+        export PATH="${PATH}:${ANDROID_HOME}/build-tools/26.0.3"
+      - >-
+        echo Check if signing has been configured;
+        if [ ${SIGNING_ENABLED} -eq 1 ]; then
+        if aws s3api head-object --bucket ${STORE_BUCKET} --key ${STORE_PATH};
+        then echo Keystore signing enabled;
+        else echo Keystore not found, skipping signing && export SIGNING_ENABLED=0;
+        fi || true;
+        fi
+      - >-
+        if [ -n "${PACKAGE_PATH}" ]; then
+        echo Navigating to package root;
+        cd ${PACKAGE_PATH};
+        fi;
+      - >-
+        echo Adding custom environment variables;
+        if aws s3api head-object --bucket ${STORE_BUCKET} --key ${ENVIRONMENT_PATH};
+        then aws s3api get-object --bucket ${STORE_BUCKET} --key ${ENVIRONMENT_PATH} env.sh;
+        fi;
+        if [ -e env.sh ];
+        then set -a; . ./env.sh; set +a;
+        else echo No custom environment variable file found;
+        fi;
+      - >-
+        echo Any additional build dependencies can be added here;
+        # e.g. android-accept-licenses.sh "sdkmanager --verbose build-tools;27.0.2"
+  build:
+    commands:
+      - >-
+        echo Building Android application;
+        cd android;
+        chmod +x gradlew;
+        if [ "${BUILD_TYPE}" = "release" ]; then
+        ./gradlew assembleRelease --debug --stacktrace;
+        else
+        ./gradlew assembleDebug --debug --stacktrace;
+        fi
+      - >-
+        if [ ${SIGNING_ENABLED} -eq 1 ]; then
+        cd app/build/outputs/apk;
+        echo Fetching keystore parameters;
+        aws ssm get-parameter --name "/mobilehub/${NAMING_PREFIX}/${REPO_BRANCH}/store/pwd" --query 'Parameter.Value' --output text | base64 --decode > store-pwd-encrypted.jks;
+        aws ssm get-parameter --name "/mobilehub/${NAMING_PREFIX}/${REPO_BRANCH}/store/alias" --query 'Parameter.Value' --output text | base64 --decode > store-alias-encrypted.jks;
+        aws ssm get-parameter --name "/mobilehub/${NAMING_PREFIX}/${REPO_BRANCH}/store/key_pwd" --query 'Parameter.Value' --output text | base64 --decode > store-key-pwd-encrypted.jks;
+        echo Decrypting parameters;
+        KEYSTORE_PWD=$(aws kms decrypt --ciphertext-blob fileb://store-pwd-encrypted.jks --output text --query Plaintext | base64 --decode);
+        KEYSTORE_ALIAS=$(aws kms decrypt --ciphertext-blob fileb://store-alias-encrypted.jks --output text --query Plaintext | base64 --decode);
+        KEYSTORE_KEY_PWD=$(aws kms decrypt --ciphertext-blob fileb://store-key-pwd-encrypted.jks --output text --query Plaintext | base64 --decode);
+        fi
+      - >-
+        if [ ${SIGNING_ENABLED} -eq 1 ]; then
+        echo Retrieving keystore from S3;
+        aws s3api get-object --bucket ${STORE_BUCKET} --key ${STORE_PATH} store-encrypted.jks;
+        echo Decrypting keystore;
+        aws kms decrypt --ciphertext-blob fileb://store-encrypted.jks --output text --query Plaintext | base64 --decode > store.jks;
+        fi
+      - >-
+        if [ ${SIGNING_ENABLED} -eq 1 ]; then
+        echo Signing APK;
+        zipalign -v -p 4 app-${BUILD_TYPE}-unsigned.apk app-${BUILD_TYPE}-aligned.apk;
+        apksigner sign -v --ks store.jks --ks-key-alias ${KEYSTORE_ALIAS} --ks-pass env:KEYSTORE_PWD --key-pass env:KEYSTORE_KEY_PWD --out app-${BUILD_TYPE}.apk app-${BUILD_TYPE}-aligned.apk;
+        apksigner verify -v app-${BUILD_TYPE}.apk;
+        fi
+  post_build:
+    commands:
+      - >-
+        echo Cleaning up container;
+        find . -type f -name 'store*.jks' -exec rm {} + || true;
+      - >-
+        echo Exporting artifacts to S3;
+        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}android/app/build/intermediates/assets/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.bundle*' || true;
+        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}android/app/build/outputs/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.apk' || true;
+        aws s3 cp ${CODEBUILD_SRC_DIR}/${PACKAGE_PATH}android/app/build/outputs/ s3://${OUTPUT_BUCKET}/${OUTPUT_PATH} --recursive --exclude '*' --include '*.txt' || true;
+
+artifacts:
+  files:
+    - ${PACKAGE_PATH}android/app/build/intermediates/assets/**/*.bundle*
+    - ${PACKAGE_PATH}android/app/build/outputs/**/*.apk
+    - ${PACKAGE_PATH}android/app/build/outputs/**/*.txt
+  discard-paths: yes
