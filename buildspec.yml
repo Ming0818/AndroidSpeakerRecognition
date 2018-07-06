@@ -1,9 +1,9 @@
 version: 0.2
-phases:
-    build:
-        commands:
-	  - chmod +x gradlew
-          - sh gradlew assembleRelease
-    artifacts:
-         files:
-             - app/build/outputs/apk/app-release-unsigned.apk
+phases: 
+  artifacts: 
+    files: 
+      - app/build/outputs/apk/app-release-unsigned.apk
+  build: 
+    commands: 
+      - "chmod +x gradlew"
+      - "sh gradlew assembleRelease"
