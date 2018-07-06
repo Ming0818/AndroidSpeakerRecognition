@@ -6,4 +6,4 @@ phases:
       - "./gradlew assembleRelease"
 artifacts: 
   files: 
-    - app/build/outputs/apk/app-release-unsigned.apk
+    - app/build/outputs/apk/
