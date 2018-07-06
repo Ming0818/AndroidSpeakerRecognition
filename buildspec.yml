@@ -3,7 +3,7 @@ phases:
   build: 
     commands: 
       - "chmod +x gradlew"
-      - "gradlew assembleRelease"
+      - "./gradlew assembleRelease"
 artifacts: 
   files: 
     - app/build/outputs/apk/app-release-unsigned.apk
