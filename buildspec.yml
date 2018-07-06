@@ -2,7 +2,7 @@ version: 0.2
 phases:
     build:
         commands:
-          - sh gradlew assembleRelease
+          - ./gradlew assembleRelease
     artifacts:
          files:
              - app/build/outputs/apk/app-release-unsigned.apk
